@@ -1,0 +1,53 @@
+version: '3.7'
+
+services:
+  db:
+    image: postgres:12
+    ports:
+     - "5432:5432"
+    environment:
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=12345
+     - POSTGRES_DB=local_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+  nginx:
+    build: 
+      dockerfile: ./docker/local/nginx/Dockerfile
+      context: .
+    volumes:
+      - static_volume:/app/staticfiles      
+    ports:
+      - 8000:80
+    depends_on:
+      - django
+    networks:
+      - nginx_network
+
+  django:
+    build: 
+      dockerfile: ./docker/local/Dockerfile
+      context: .
+    environment:
+      - DEBUG=1
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - PORT=8000
+    expose:
+      - 8000
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    depends_on:
+      - db
+    networks:
+      - nginx_network
+
+volumes:
+  postgres_data:
+  static_volume:
+
+networks: 
+  nginx_network:
+    driver: bridge  
